@@ -35,6 +35,8 @@ func downloadVideo(videoID string) {
 	if err != nil {
 		panic(err)
 	}
+
+	fmt.Println("Downloaded video: " + video.Title)
 }
 
 func main() {
