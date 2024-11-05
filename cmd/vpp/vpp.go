@@ -14,6 +14,12 @@ func main() {
 
 	flag.Parse()
 
+	// Validate that -chunked requires -dl
+	if *downloadInChunks && !*downloadMode {
+		fmt.Println("ERROR: The -chunk flag requires -dl to be specified.")
+		os.Exit(1)
+	}
+
 	args := flag.Args()
 
 	if *downloadMode {
