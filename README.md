@@ -19,15 +19,15 @@ A simple video and/or audio downloading, re-encoding, clipping program created f
 
 ## Quick Start
 
-1.  ```console
+1.  ```shell
     git clone https://github.com/stumburs/vpp.git
     ```
 
-2.  ```console
+2.  ```shell
     cd vpp
     ```
 
-3.  ```console
+3.  ```shell
     go build cmd/vpp/vpp.go
     ```
 
@@ -37,13 +37,13 @@ A simple video and/or audio downloading, re-encoding, clipping program created f
 
 #### Using a URL
 
-```console
+```shell
 ./vpp -dl www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
 
 #### Using an ID
 
-```console
+```shell
 ./vpp -dl dQw4w9WgXcQ
 ```
 
