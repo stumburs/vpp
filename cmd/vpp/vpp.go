@@ -25,7 +25,7 @@ func downloadVideo(videoID string) {
 	}
 	defer stream.Close()
 
-	file, err := os.Create("video.mp4")
+	file, err := os.Create(video.Title + ".mp4")
 	if err != nil {
 		panic(err)
 	}
