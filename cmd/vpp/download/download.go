@@ -16,7 +16,7 @@ const (
 	retryWait     = 2 * time.Second     // Wait time before retrying
 )
 
-func DownloadVideo(videoID string) {
+func DownloadVideo(videoID string, downloadInChunks bool) {
 	client := youtube.Client{}
 
 	video, err := client.GetVideo(videoID)
@@ -41,13 +41,8 @@ func DownloadVideo(videoID string) {
 
 	bar := progressbar.DefaultBytes(streamSize, "Downloading "+video.Title)
 
-	// Direct download
-	if streamSize < 1000*youtube.Size1Mb {
-		_, err = io.Copy(file, io.TeeReader(stream, bar))
-		if err != nil {
-			panic(err)
-		}
-	} else { // EXPERIMENTAL: Download in chunks
+	// EXPERIMENTAL
+	if downloadInChunks {
 		for offset := int64(0); offset < streamSize; offset += chunkSize {
 
 			// Current size of chunk
@@ -65,6 +60,11 @@ func DownloadVideo(videoID string) {
 				fmt.Printf("Error downloading chunk (%d-%d): %v. Retrying...\n", offset, end, err)
 				time.Sleep(retryWait)
 			}
+		}
+	} else {
+		_, err = io.Copy(file, io.TeeReader(stream, bar))
+		if err != nil {
+			panic(err)
 		}
 	}
 

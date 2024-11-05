@@ -10,6 +10,7 @@ import (
 
 func main() {
 	downloadMode := flag.Bool("dl", false, "-dl <URL|ID> Download a video using a URL or ID.")
+	downloadInChunks := flag.Bool("chunk", false, "Download the video in chunks. This might resolve longer videos failing to download due to EOF errors.")
 
 	flag.Parse()
 
@@ -23,7 +24,7 @@ func main() {
 
 		videoURL := args[0]
 
-		download.DownloadVideo(videoURL)
+		download.DownloadVideo(videoURL, *downloadInChunks)
 	} else {
 		fmt.Println("Use -help for usage.")
 	}
