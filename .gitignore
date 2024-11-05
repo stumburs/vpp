@@ -1,2 +1,4 @@
 *.mp4
-vpp
+
+# Executable for Linux. Luckily it doesn't see the actual vpp folder
+/vpp
