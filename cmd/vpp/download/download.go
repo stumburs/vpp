@@ -138,7 +138,7 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 	return dl.videoDLWorker(ctx, out, v, format)
 }
 
-func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype, language string) error {
+func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype, language string, reencode bool) error {
 	videoFormat, audioFormat, err := GetVideoAudioFormats(v, quality, mimetype, language)
 	if err != nil {
 		return err
@@ -182,14 +182,28 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 		return err
 	}
 
-	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
-		"-i", videoFile.Name(),
-		"-i", audioFile.Name(),
-		"-c", "copy", // Just copy without re-encoding
-		"-shortest", // Finish encoding when the shortest input stream ends
-		destFile,
-		"-loglevel", "warning",
-	)
+	var ffmpegVersionCmd *exec.Cmd
+
+	if reencode {
+		ffmpegVersionCmd = exec.Command("ffmpeg", "-y",
+			"-i", videoFile.Name(),
+			"-i", audioFile.Name(),
+			"-shortest", // Finish encoding when the shortest input stream ends
+			destFile,
+			"-loglevel", "warning",
+		)
+	} else {
+		ffmpegVersionCmd = exec.Command("ffmpeg", "-y",
+			"-i", videoFile.Name(),
+			"-i", audioFile.Name(),
+			"-c:v", "copy",
+			"-c:a", "copy", // Just copy without re-encoding
+			"-shortest", // Finish encoding when the shortest input stream ends
+			destFile,
+			"-loglevel", "warning",
+		)
+	}
+
 	ffmpegVersionCmd.Stderr = os.Stderr
 	ffmpegVersionCmd.Stdout = os.Stdout
 	log.Info("merging video and audio", "output", destFile)

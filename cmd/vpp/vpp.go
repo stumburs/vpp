@@ -13,6 +13,7 @@ func main() {
 	downloadMode := flag.Bool("dl", false, "<URL|ID> Download a video using a URL or ID.")
 	videoInfo := flag.Bool("info", false, "<URL|ID> Displays all possible formats for specified video.")
 	videoQualityFlag := flag.Int("q", 0, "Specifies what quality to download the video as. Use -info to view all possible formats.")
+	reencodeFlag := flag.Bool("reencode", false, "After downloading, mixes the video and audio by re-encoding, instead of copying.")
 
 	flag.Parse()
 
@@ -57,7 +58,7 @@ func main() {
 
 		qualityLabel := video.Formats[*videoQualityFlag].QualityLabel
 
-		dl.DownloadComposite(ctx, "", video, qualityLabel, "", "")
+		dl.DownloadComposite(ctx, "", video, qualityLabel, "", "", *reencodeFlag)
 	} else {
 		fmt.Println("Use -help for usage.")
 	}
