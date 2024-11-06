@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
@@ -30,7 +31,22 @@ func main() {
 
 		videoURL := args[0]
 
-		download.DownloadVideo(videoURL, *downloadInChunks)
+		dl := download.Downloader{OutputDir: "test"}
+		ctx := context.Background()
+
+		video, err := dl.Client.GetVideoContext(ctx, videoURL)
+		if err != nil {
+			panic(err)
+		}
+
+		// for _, format := range video.Formats {
+		// 	fmt.Println(format.QualityLabel)
+		// }
+
+		// Download highest quality as default (for now)
+		qualityLabel := video.Formats[0].QualityLabel
+
+		dl.DownloadComposite(ctx, "", video, qualityLabel, "", "")
 	} else {
 		fmt.Println("Use -help for usage.")
 	}
