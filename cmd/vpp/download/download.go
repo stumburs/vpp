@@ -182,27 +182,18 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 		return err
 	}
 
-	var ffmpegVersionCmd *exec.Cmd
+	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
+		"-i", videoFile.Name(),
+		"-i", audioFile.Name(),
+	)
 
 	if reencode {
-		ffmpegVersionCmd = exec.Command("ffmpeg", "-y",
-			"-i", videoFile.Name(),
-			"-i", audioFile.Name(),
-			"-shortest", // Finish encoding when the shortest input stream ends
-			destFile,
-			"-loglevel", "warning",
-		)
+		ffmpegVersionCmd.Args = append(ffmpegVersionCmd.Args, "-c:v", "libx264", "-c:a", "aac")
 	} else {
-		ffmpegVersionCmd = exec.Command("ffmpeg", "-y",
-			"-i", videoFile.Name(),
-			"-i", audioFile.Name(),
-			"-c:v", "copy",
-			"-c:a", "copy", // Just copy without re-encoding
-			"-shortest", // Finish encoding when the shortest input stream ends
-			destFile,
-			"-loglevel", "warning",
-		)
+		ffmpegVersionCmd.Args = append(ffmpegVersionCmd.Args, "-c:v", "copy", "-c:a", "copy")
 	}
+
+	ffmpegVersionCmd.Args = append(ffmpegVersionCmd.Args, "-shortest", destFile, "-loglevel", "warning")
 
 	ffmpegVersionCmd.Stderr = os.Stderr
 	ffmpegVersionCmd.Stdout = os.Stdout

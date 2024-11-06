@@ -16,6 +16,8 @@ A simple video and/or audio downloading, re-encoding, clipping program created f
       - [Using an ID](#using-an-id)
       - [Specifying the quality](#specifying-the-quality)
     - [Get info about a video](#get-info-about-a-video)
+    - [Experimental features](#experimental-features)
+      - [Re-encoding](#re-encoding)
   - [Contributing](#contributing)
   - [License](#license)
 
@@ -65,6 +67,19 @@ To get info about a specific video, use the `-info` flag. The output will be dis
 
 ```shell
 ./vpp -info www.youtube.com/watch?v=dQw4w9WgXcQ
+```
+
+### Experimental features
+
+> [!NOTE]
+> These experimental features are subject to bugs, changes, and potential removal. Use with caution.
+
+#### Re-encoding
+
+Using the `-reencode` flag when downloading a video, will fully re-encode it using the x264/AAC codecs after the video and audio parts have been downloaded, instead of simply copying them. In most cases, this feature will make the video acquiring time significantly longer. This feature also fixes embed issues with Discord as it doesn't support h265 or AV1 encoding.
+
+```shell
+./vpp -dl -reencode www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
 
 ## Contributing
