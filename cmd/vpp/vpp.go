@@ -10,18 +10,34 @@ import (
 )
 
 func main() {
-	downloadMode := flag.Bool("dl", false, "-dl <URL|ID> Download a video using a URL or ID.")
-	downloadInChunks := flag.Bool("chunk", false, "Download the video in chunks. This might resolve longer videos failing to download due to EOF errors.")
+	downloadMode := flag.Bool("dl", false, "<URL|ID> Download a video using a URL or ID.")
+	videoInfo := flag.Bool("info", false, "<URL|ID> Displays all possible formats for specified video.")
+	videoQualityFlag := flag.Int("q", 0, "Specifies what quality to download the video as. Use -info to view all possible formats.")
 
 	flag.Parse()
 
-	// Validate that -chunked requires -dl
-	if *downloadInChunks && !*downloadMode {
-		fmt.Println("ERROR: The -chunk flag requires -dl to be specified.")
-		os.Exit(1)
-	}
-
 	args := flag.Args()
+
+	if *videoInfo {
+		if len(args) < 1 {
+			fmt.Println("ERROR: You must provide a video URL or ID when using the -info flag.")
+			os.Exit(1)
+		}
+
+		// TODO: Add -o flag to specify output file/directory
+		dl := download.Downloader{OutputDir: ""}
+		ctx := context.Background()
+		videoURL := args[0]
+
+		video, err := dl.Client.GetVideoContext(ctx, videoURL)
+
+		if err != nil {
+			panic(err)
+		}
+
+		download.DisplayFormats(video)
+		os.Exit(0)
+	}
 
 	if *downloadMode {
 		if len(args) < 1 {
@@ -31,7 +47,7 @@ func main() {
 
 		videoURL := args[0]
 
-		dl := download.Downloader{OutputDir: "test"}
+		dl := download.Downloader{OutputDir: ""}
 		ctx := context.Background()
 
 		video, err := dl.Client.GetVideoContext(ctx, videoURL)
@@ -39,12 +55,7 @@ func main() {
 			panic(err)
 		}
 
-		// for _, format := range video.Formats {
-		// 	fmt.Println(format.QualityLabel)
-		// }
-
-		// Download highest quality as default (for now)
-		qualityLabel := video.Formats[0].QualityLabel
+		qualityLabel := video.Formats[*videoQualityFlag].QualityLabel
 
 		dl.DownloadComposite(ctx, "", video, qualityLabel, "", "")
 	} else {
