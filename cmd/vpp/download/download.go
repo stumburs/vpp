@@ -100,10 +100,13 @@ func downloadChunk(client *youtube.Client, video *youtube.Video, format *youtube
 	return err
 }
 
-func (dl *Downloader) getOutputFile(v *youtube.Video, format *youtube.Format, outputFile string) (string, error) {
+func (dl *Downloader) getOutputFile(v *youtube.Video, _ *youtube.Format, outputFile string) (string, error) {
 	if outputFile == "" {
 		outputFile = SanitizeFilename(v.Title)
-		outputFile += pickIdealFileExtension(format.MimeType)
+
+		// "There's nothing more permanent than a temporary solution"
+		// outputFile += pickIdealFileExtension(format.MimeType)
+		outputFile += ".mp4"
 	}
 
 	if dl.OutputDir != "" {
