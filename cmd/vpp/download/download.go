@@ -199,6 +199,11 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	ffmpegVersionCmd.Stdout = os.Stdout
 	log.Info("merging video and audio", "output", destFile)
 
+	// Close files before running ffmpeg as it needs them.
+	// Defer wouldn't work.
+	videoFile.Close()
+	audioFile.Close()
+
 	return ffmpegVersionCmd.Run()
 }
 
