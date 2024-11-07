@@ -15,6 +15,8 @@ A simple video and/or audio downloading, re-encoding, clipping program created f
       - [Using a URL](#using-a-url)
       - [Using an ID](#using-an-id)
       - [Specifying the quality](#specifying-the-quality)
+    - [Downloading audio](#downloading-audio)
+      - [mp3](#mp3)
     - [Get info about a video](#get-info-about-a-video)
     - [Experimental features](#experimental-features)
       - [Re-encoding](#re-encoding)
@@ -59,6 +61,16 @@ To specify the quality what you want to download the video as, use the `-q` flag
 
 ```shell
 ./vpp -dl -q 2 www.youtube.com/watch?v=dQw4w9WgXcQ
+```
+
+### Downloading audio
+
+#### mp3
+
+To download only the audio part of the video as .mp3, you just need to add the `-mp3` flag to your command.
+
+```shell
+./vpp -dl -mp3 www.youtube.com/watch?v=dQw4w9WgXcQ
 ```
 
 ### Get info about a video

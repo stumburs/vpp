@@ -18,13 +18,22 @@ type Downloader struct {
 	OutputDir string // optional
 }
 
-func (dl *Downloader) getOutputFile(v *youtube.Video, _ *youtube.Format, outputFile string) (string, error) {
+type DownloadFlags struct {
+	ReencodeAfterDownload bool
+	DownloadAsMP3         bool
+}
+
+func (dl *Downloader) getOutputFile(v *youtube.Video, _ *youtube.Format, outputFile string, downloadFlags DownloadFlags) (string, error) {
 	if outputFile == "" {
 		outputFile = SanitizeFilename(v.Title)
 
 		// "There's nothing more permanent than a temporary solution"
 		// outputFile += pickIdealFileExtension(format.MimeType)
-		outputFile += ".mp4"
+		if downloadFlags.DownloadAsMP3 {
+			outputFile += ".mp3"
+		} else {
+			outputFile += ".mp4"
+		}
 	}
 
 	if dl.OutputDir != "" {
@@ -37,7 +46,7 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, _ *youtube.Format, outputF
 	return outputFile, nil
 }
 
-func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string) error {
+func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *youtube.Format, outputFile string, downloadFlags DownloadFlags) error {
 	youtube.Logger.Info(
 		"Downloading video",
 		"id", v.ID,
@@ -45,7 +54,7 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 		"mimeType", format.MimeType,
 	)
 
-	destFile, err := dl.getOutputFile(v, format, outputFile)
+	destFile, err := dl.getOutputFile(v, format, outputFile, downloadFlags)
 	if err != nil {
 		return err
 	}
@@ -59,7 +68,7 @@ func (dl *Downloader) Download(ctx context.Context, v *youtube.Video, format *yo
 	return dl.videoDLWorker(ctx, out, v, format)
 }
 
-func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype, language string, reencode bool) error {
+func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, v *youtube.Video, quality string, mimetype, language string, downloadFlags DownloadFlags) error {
 	videoFormat, audioFormat, err := GetVideoAudioFormats(v, quality, mimetype, language)
 	if err != nil {
 		return err
@@ -73,59 +82,18 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 		"audioMimeType", audioFormat.MimeType,
 	)
 
-	destFile, err := dl.getOutputFile(v, videoFormat, outputFile)
+	destFile, err := dl.getOutputFile(v, videoFormat, outputFile, downloadFlags)
 	if err != nil {
 		return err
 	}
 	outputDir := filepath.Dir(destFile)
 
-	videoFile, err := os.CreateTemp(outputDir, "youtube_*.m4v")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(videoFile.Name())
-
-	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
-	if err != nil {
-		return err
-	}
-	defer os.Remove(audioFile.Name())
-
-	log.Debug("Downloading video file...")
-	err = dl.videoDLWorker(ctx, videoFile, v, videoFormat)
-	if err != nil {
-		return err
+	// Download only as .mp3
+	if downloadFlags.DownloadAsMP3 {
+		return dl.downloadVideoAsMP3(ctx, outputDir, destFile, v, audioFormat)
 	}
 
-	log.Debug("Downloading audio file...")
-	err = dl.videoDLWorker(ctx, audioFile, v, audioFormat)
-	if err != nil {
-		return err
-	}
-
-	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
-		"-i", videoFile.Name(),
-		"-i", audioFile.Name(),
-	)
-
-	if reencode {
-		ffmpegVersionCmd.Args = append(ffmpegVersionCmd.Args, "-c:v", "libx264", "-c:a", "aac")
-	} else {
-		ffmpegVersionCmd.Args = append(ffmpegVersionCmd.Args, "-c:v", "copy", "-c:a", "copy")
-	}
-
-	ffmpegVersionCmd.Args = append(ffmpegVersionCmd.Args, "-shortest", destFile, "-loglevel", "warning")
-
-	ffmpegVersionCmd.Stderr = os.Stderr
-	ffmpegVersionCmd.Stdout = os.Stdout
-	log.Info("merging video and audio", "output", destFile)
-
-	// Close files before running ffmpeg as it needs them.
-	// Defer wouldn't work.
-	videoFile.Close()
-	audioFile.Close()
-
-	return ffmpegVersionCmd.Run()
+	return dl.downloadVideoAsMP4(ctx, outputDir, destFile, v, videoFormat, audioFormat, downloadFlags)
 }
 
 func GetVideoAudioFormats(v *youtube.Video, quality string, mimetype string, language string) (*youtube.Format, *youtube.Format, error) {
@@ -177,4 +145,110 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *yo
 		return fmt.Errorf("download failed: %w", err)
 	}
 	return nil
+}
+
+func combineIntoMP4(videoFile *os.File, audioFile *os.File, destFile string) error {
+	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
+		"-i", videoFile.Name(),
+		"-i", audioFile.Name(),
+		"-c:v", "copy",
+		"-c:a", "copy",
+		"-shortest", destFile,
+		"-loglevel", "warning",
+	)
+
+	ffmpegVersionCmd.Stderr = os.Stderr
+	ffmpegVersionCmd.Stdout = os.Stdout
+	fmt.Printf("\nMerging temporary files into: %s\n", destFile)
+
+	videoFile.Close()
+	audioFile.Close()
+
+	return ffmpegVersionCmd.Run()
+}
+
+func combineIntoMP4Reencode(videoFile *os.File, audioFile *os.File, destFile string) error {
+	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
+		"-i", videoFile.Name(),
+		"-i", audioFile.Name(),
+		"-c:v", "libx264",
+		"-c:a", "aac",
+		"-shortest", destFile,
+		"-loglevel", "warning",
+	)
+
+	ffmpegVersionCmd.Stderr = os.Stderr
+	ffmpegVersionCmd.Stdout = os.Stdout
+	fmt.Printf("\nMerging temporary files into: %s\n", destFile)
+
+	videoFile.Close()
+	audioFile.Close()
+
+	return ffmpegVersionCmd.Run()
+}
+
+func processIntoMP3(audioFile *os.File, destFile string) error {
+	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
+		"-i", audioFile.Name(),
+		"-vn",
+		"-ar", "44100",
+		"-ac", "2",
+		"-b:a", "192k",
+		destFile, "-loglevel", "warning",
+	)
+
+	ffmpegVersionCmd.Stderr = os.Stderr
+	ffmpegVersionCmd.Stdout = os.Stdout
+
+	audioFile.Close()
+
+	return ffmpegVersionCmd.Run()
+}
+
+func (dl *Downloader) downloadVideoAsMP3(ctx context.Context, outputDir, destFile string, v *youtube.Video, audioFormat *youtube.Format) error {
+	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(audioFile.Name())
+
+	fmt.Printf("Downloading audio file...\n")
+	if err := dl.videoDLWorker(ctx, audioFile, v, audioFormat); err != nil {
+		return err
+	}
+
+	fmt.Printf("\nCreating .mp3 file: %s\n", destFile)
+	return processIntoMP3(audioFile, destFile)
+}
+
+func (dl *Downloader) downloadVideoAsMP4(ctx context.Context, outputDir, destFile string, v *youtube.Video, videoFormat *youtube.Format, audioFormat *youtube.Format, downloadFlags DownloadFlags) error {
+	videoFile, err := os.CreateTemp(outputDir, "youtube_*.m4v")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(videoFile.Name())
+
+	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(audioFile.Name())
+
+	fmt.Printf("Downloading video file...\n")
+	if err := dl.videoDLWorker(ctx, videoFile, v, videoFormat); err != nil {
+		return err
+	}
+	videoFile.Close()
+
+	fmt.Printf("Downloading audio file...\n")
+	if err := dl.videoDLWorker(ctx, audioFile, v, audioFormat); err != nil {
+		return err
+	}
+	audioFile.Close()
+
+	// Combine into final output format
+	if downloadFlags.ReencodeAfterDownload {
+		return combineIntoMP4Reencode(videoFile, audioFile, destFile)
+	}
+	return combineIntoMP4(videoFile, audioFile, destFile)
 }

@@ -14,8 +14,14 @@ func main() {
 	videoInfo := flag.Bool("info", false, "<URL|ID> Displays all possible formats for specified video.")
 	videoQualityFlag := flag.Int("q", 0, "Specifies what quality to download the video as. Use -info to view all possible formats.")
 	reencodeFlag := flag.Bool("reencode", false, "After downloading, mixes the video and audio by re-encoding using x264/AAC codecs, instead of copying. This fixes embed issues with Discord.")
+	downloadMP3 := flag.Bool("mp3", false, "Download only as mp3.")
 
 	flag.Parse()
+
+	userFlags := download.DownloadFlags{
+		ReencodeAfterDownload: *reencodeFlag,
+		DownloadAsMP3:         *downloadMP3,
+	}
 
 	args := flag.Args()
 
@@ -58,7 +64,7 @@ func main() {
 
 		qualityLabel := video.Formats[*videoQualityFlag].QualityLabel
 
-		dl.DownloadComposite(ctx, "", video, qualityLabel, "", "", *reencodeFlag)
+		dl.DownloadComposite(ctx, "", video, qualityLabel, "", "", userFlags)
 	} else {
 		fmt.Println("Use -help for usage.")
 	}
