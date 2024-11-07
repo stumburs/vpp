@@ -41,6 +41,8 @@ A simple video and/or audio downloading, re-encoding, clipping program created f
 
 ### Downloading a video
 
+To download a video, use the `-dl` flag and specify the URL or ID.
+
 By default, all videos are downloaded at their highest quality.
 
 #### Using a URL
@@ -57,7 +59,7 @@ By default, all videos are downloaded at their highest quality.
 
 #### Specifying the quality
 
-To specify the quality what you want to download the video as, use the `-q` flag followed by a number you got from the `-info` flag. The default - 0, represents the highest available quality.
+To specify the quality what you want to download the video as, use the `-q` flag followed by a number you got from the [`-info`](#get-info-about-a-video) flag. The default - 0, represents the highest available quality.
 
 ```shell
 ./vpp -dl -q 2 www.youtube.com/watch?v=dQw4w9WgXcQ
