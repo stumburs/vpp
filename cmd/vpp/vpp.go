@@ -5,18 +5,31 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"runtime"
 
 	"github.com/stumburs/vpp/cmd/vpp/download"
+	"github.com/stumburs/vpp/cmd/vpp/version"
 )
 
 func main() {
+	// Download flags
 	downloadMode := flag.Bool("dl", false, "<URL|ID> Download a video using a URL or ID.")
 	videoInfo := flag.Bool("info", false, "<URL|ID> Displays all possible formats for specified video.")
 	videoQualityFlag := flag.Int("q", 0, "Specifies what quality to download the video as. Use -info to view all possible formats.")
 	reencodeFlag := flag.Bool("reencode", false, "After downloading, mixes the video and audio by re-encoding using x264/AAC codecs, instead of copying. This fixes embed issues with Discord.")
 	downloadMP3 := flag.Bool("mp3", false, "Download only as mp3.")
 
+	// Program meta flags
+	versionFlag := flag.Bool("version", false, "Displays executable version.")
+	vFlag := flag.Bool("v", false, "Displays executable version.")
+
 	flag.Parse()
+
+	// Version
+	if *versionFlag || *vFlag {
+		fmt.Printf("vpp version %s %s/%s\n", version.VERSION, runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
 
 	userFlags := download.DownloadFlags{
 		ReencodeAfterDownload: *reencodeFlag,
