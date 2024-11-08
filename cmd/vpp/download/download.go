@@ -21,6 +21,7 @@ type Downloader struct {
 type DownloadFlags struct {
 	ReencodeAfterDownload bool
 	DownloadAsMP3         bool
+	DownloadAsWAV         bool
 }
 
 func (dl *Downloader) getOutputFile(v *youtube.Video, _ *youtube.Format, outputFile string, downloadFlags DownloadFlags) (string, error) {
@@ -31,6 +32,8 @@ func (dl *Downloader) getOutputFile(v *youtube.Video, _ *youtube.Format, outputF
 		// outputFile += pickIdealFileExtension(format.MimeType)
 		if downloadFlags.DownloadAsMP3 {
 			outputFile += ".mp3"
+		} else if downloadFlags.DownloadAsWAV {
+			outputFile += ".wav"
 		} else {
 			outputFile += ".mp4"
 		}
@@ -91,6 +94,11 @@ func (dl *Downloader) DownloadComposite(ctx context.Context, outputFile string, 
 	// Download only as .mp3
 	if downloadFlags.DownloadAsMP3 {
 		return dl.downloadVideoAsMP3(ctx, outputDir, destFile, v, audioFormat)
+	}
+
+	// Download only as .wav
+	if downloadFlags.DownloadAsWAV {
+		return dl.downloadVideoAsWAV(ctx, outputDir, destFile, v, audioFormat)
 	}
 
 	return dl.downloadVideoAsMP4(ctx, outputDir, destFile, v, videoFormat, audioFormat, downloadFlags)
@@ -205,6 +213,23 @@ func processIntoMP3(audioFile *os.File, destFile string) error {
 	return ffmpegVersionCmd.Run()
 }
 
+func processIntoWAV(audioFile *os.File, destFile string) error {
+	ffmpegVersionCmd := exec.Command("ffmpeg", "-y",
+		"-i", audioFile.Name(),
+		"-vn",
+		"-ar", "44100",
+		"-ac", "2",
+		destFile, "-loglevel", "warning",
+	)
+
+	ffmpegVersionCmd.Stderr = os.Stderr
+	ffmpegVersionCmd.Stdout = os.Stdout
+
+	audioFile.Close()
+
+	return ffmpegVersionCmd.Run()
+}
+
 func (dl *Downloader) downloadVideoAsMP3(ctx context.Context, outputDir, destFile string, v *youtube.Video, audioFormat *youtube.Format) error {
 	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
 	if err != nil {
@@ -219,6 +244,22 @@ func (dl *Downloader) downloadVideoAsMP3(ctx context.Context, outputDir, destFil
 
 	fmt.Printf("\nCreating .mp3 file: %s\n", destFile)
 	return processIntoMP3(audioFile, destFile)
+}
+
+func (dl *Downloader) downloadVideoAsWAV(ctx context.Context, outputDir, destFile string, v *youtube.Video, audioFormat *youtube.Format) error {
+	audioFile, err := os.CreateTemp(outputDir, "youtube_*.m4a")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(audioFile.Name())
+
+	fmt.Printf("Downloading audio file...\n")
+	if err := dl.videoDLWorker(ctx, audioFile, v, audioFormat); err != nil {
+		return err
+	}
+
+	fmt.Printf("\nCreating .wav file: %s\n", destFile)
+	return processIntoWAV(audioFile, destFile)
 }
 
 func (dl *Downloader) downloadVideoAsMP4(ctx context.Context, outputDir, destFile string, v *youtube.Video, videoFormat *youtube.Format, audioFormat *youtube.Format, downloadFlags DownloadFlags) error {
