@@ -3,7 +3,7 @@
 A simple video and/or audio downloading, re-encoding, clipping program created for my own use cases. Many functions are dependent on ffmpeg to function as they are just a higher level wrapper.
 
 > [!NOTE]
-> At the moment, it lack most aforementioned features.
+> This tool is not meant to download content you do not own or have permission to download. I take no responsibility for what you do with this piece of software. The URL's provided in the example commands are meant only as examples.
 
 ## Overview
 
