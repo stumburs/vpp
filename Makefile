@@ -12,8 +12,8 @@ windows:
 all: linux windows
 
 archive: all
-	tar -czvf vpp_VERSION_linux_amd64.tar.gz vpp
-	tar -czvf vpp_VERSION_windows_amd64.tar.gz vpp.exe
+	tar -czvf vpp_$(VERSION)_linux_amd64.tar.gz vpp
+	tar -czvf vpp_$(VERSION)_windows_amd64.tar.gz vpp.exe
 
 clean:
 	rm vpp vpp.exe
