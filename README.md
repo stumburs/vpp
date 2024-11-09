@@ -19,6 +19,8 @@ A simple video and/or audio downloading, re-encoding, clipping program created f
       - [mp3](#mp3)
       - [wav](#wav)
     - [Get info about a video](#get-info-about-a-video)
+    - [Converting](#converting)
+      - [Change video file size](#change-video-file-size)
     - [Experimental features](#experimental-features)
       - [Re-encoding](#re-encoding)
   - [Contributing](#contributing)
@@ -90,6 +92,22 @@ To get info about a specific video, use the `-info` flag. The output will be dis
 
 ```shell
 ./vpp -info www.youtube.com/watch?v=dQw4w9WgXcQ
+```
+
+### Converting
+
+#### Change video file size
+
+To change the size of a video file by re-rendering it with a different bitrate, you can use this command. Depending on your computer specs and input file, this may take a long time. This feature is also not extensively tested.
+
+`-conv` - conversion mode
+
+`-size` - convert to specific size
+
+`-mb 10` - convert to ~10 megabytes
+
+```shell
+./vpp -conv -size -mb 10 input.mp4 output.mp4
 ```
 
 ### Experimental features
