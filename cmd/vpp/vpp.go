@@ -7,6 +7,7 @@ import (
 	"os"
 	"runtime"
 
+	"github.com/stumburs/vpp/cmd/vpp/convert"
 	"github.com/stumburs/vpp/cmd/vpp/download"
 	"github.com/stumburs/vpp/cmd/vpp/version"
 )
@@ -23,6 +24,11 @@ func main() {
 	// Program meta flags
 	versionFlag := flag.Bool("version", false, "Displays executable version.")
 	vFlag := flag.Bool("v", false, "Displays executable version.")
+
+	// Convert flags
+	convertMode := flag.Bool("conv", false, "Converts a file into another file according to specific parameters.")
+	sizeFlag := flag.Bool("size", false, "Convert file to specific size by changing the bitrate.")
+	targetSizeMBFlag := flag.Int("mb", 0, "Megabytes")
 
 	flag.Parse()
 
@@ -80,7 +86,34 @@ func main() {
 		qualityLabel := video.Formats[*videoQualityFlag].QualityLabel
 
 		dl.DownloadComposite(ctx, "", video, qualityLabel, "", "", userFlags)
-	} else {
-		fmt.Println("Use -help for usage.")
+		os.Exit(0)
 	}
+
+	if *convertMode {
+		if *sizeFlag {
+			if *targetSizeMBFlag != 0 {
+				if len(args) < 2 {
+					fmt.Println("ERROR: You must provide TWO file paths.")
+					os.Exit(1)
+				}
+
+				inputVideo := args[0]
+				outputVideo := args[1]
+
+				convert.ChangeVideoSize(inputVideo, outputVideo, *targetSizeMBFlag)
+				os.Exit(0)
+
+			} else {
+				fmt.Println("ERROR: Target size must not be 0MB.")
+				os.Exit(1)
+			}
+		} else {
+			fmt.Println("ERROR: You must provide a conversion flag.")
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
+
+	fmt.Println("Use -help for usage.")
+	os.Exit(0)
 }
