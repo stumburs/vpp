@@ -100,7 +100,12 @@ func main() {
 				inputVideo := args[0]
 				outputVideo := args[1]
 
-				convert.ChangeVideoSize(inputVideo, outputVideo, *targetSizeMBFlag)
+				err := convert.ChangeVideoSize(inputVideo, outputVideo, *targetSizeMBFlag)
+				if err != nil {
+					fmt.Printf("ERROR: %s\n", err)
+					os.Exit(1)
+				}
+
 				os.Exit(0)
 
 			} else {
