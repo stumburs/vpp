@@ -85,7 +85,9 @@ func main() {
 
 		qualityLabel := video.Formats[*videoQualityFlag].QualityLabel
 
-		dl.DownloadComposite(ctx, "", video, qualityLabel, "", "", userFlags)
+		if err = dl.DownloadComposite(ctx, "", video, qualityLabel, "", "", userFlags); err != nil {
+			fmt.Println(err)
+		}
 		os.Exit(0)
 	}
 

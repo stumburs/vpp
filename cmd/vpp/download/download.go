@@ -142,16 +142,21 @@ func (dl *Downloader) videoDLWorker(ctx context.Context, out *os.File, video *yo
 		return err
 	}
 
+	if stream == nil {
+		return fmt.Errorf("stream empty")
+	}
+
 	bar := progressbar.New(int(size))
 
 	reader := progressbar.NewReader(stream, bar)
 
 	mw := io.MultiWriter(out)
 
-	_, err = io.Copy(mw, &reader)
-	if err != nil {
+	bytesDownloaded, err := io.Copy(mw, &reader)
+	if err != nil || bytesDownloaded != size {
 		return fmt.Errorf("download failed: %w", err)
 	}
+	fmt.Println("a")
 	return nil
 }
 
