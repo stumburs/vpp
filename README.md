@@ -39,6 +39,14 @@ A simple video and/or audio downloading, re-encoding, clipping program created f
 3.  ```shell
     go build cmd/vpp/vpp.go
     ```
+    or
+    ```shell
+    make linux
+    ```
+    ```shell
+    make windows
+    ```
+    depending on your OS
 
 ## Examples
 
